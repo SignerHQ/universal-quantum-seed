@@ -567,7 +567,7 @@ All icons are available as **PNG** (256×256, transparent background) in `visual
 | 18 | :cow2: | cow | | 30 | :camel: | camel |
 | 19 | :pig2: | pig | | 31 | :zebra: | zebra |
 | 20 | :goat: | goat | | 32 | :giraffe: | giraffe |
-| 21 | :rabbit2: | rabbit | | 33 | :fox: | fox |
+| 21 | :rabbit2: | rabbit | | 33 | :fox_face: | fox |
 | 22 | :mouse2: | mouse | | 34 | :lion: | lion |
 | 23 | :tiger2: | tiger | | 35 | :monkey: | monkey |
 | 24 | :wolf: | wolf | | 36 | :panda_face: | panda |
@@ -873,7 +873,7 @@ All icons are available as **PNG** (256×256, transparent background) in `visual
 </details>
 
 <details>
-<summary><b>Sports</b> &nbsp;·&nbsp; <code>246 – 249</code></summary>
+<summary><b>Sports & Games</b> &nbsp;·&nbsp; <code>246 – 249</code></summary>
 <br>
 
 | Index | Icon | Word | | Index | Icon | Word |
