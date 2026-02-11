@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Signer — MIT License
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 """Seed generation for the Universal Seed System.
 
