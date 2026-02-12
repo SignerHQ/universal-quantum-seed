@@ -32,9 +32,7 @@
 
 <table>
 <tr>
-<td><img src="examples/screenshots/generate.png" width="270"></td>
-<td><img src="examples/screenshots/icons.png" width="270"></td>
-<td><img src="examples/screenshots/suggest.png" width="270"></td>
+<td><img src="examples/screenshots/universal.gif" width="800"></td>
 </tr>
 </table>
 
