@@ -1,6 +1,6 @@
 <div align="center">
 
-# Universal Seed System 2.X
+# Universal Seed System 2.x
 
 ### The world's first visual + multilingual seed phrase system
 
