@@ -56,6 +56,7 @@ if sys.platform == "win32":
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 LANGUAGES_DIR = os.path.join(PROJECT_DIR, "languages")
+VISUALS_DIR = os.path.join(PROJECT_DIR, "visuals", "png")
 OUTPUT_FILE = os.path.join(PROJECT_DIR, "words.py")
 
 sys.path.insert(0, PROJECT_DIR)
@@ -332,6 +333,31 @@ def compile_lookup():
     for code in sorted(languages):
         print(f"  {code}: {languages[code]['label']} ({len(languages[code]['words'])} words)")
 
+    # Scan visuals for dark icons (avoids runtime pixel scanning)
+    dark_visuals = set()
+    try:
+        from PIL import Image
+        for idx in range(256):
+            path = os.path.join(VISUALS_DIR, f"{idx}.png")
+            if not os.path.exists(path):
+                continue
+            img = Image.open(path).convert("RGBA")
+            w, h = img.size
+            total, count = 0.0, 0
+            pixels = img.load()
+            for y in range(0, h, 2):
+                for x in range(0, w, 2):
+                    r, g, b, a = pixels[x, y]
+                    if a < 50:
+                        continue
+                    total += 0.299 * r + 0.587 * g + 0.114 * b
+                    count += 1
+            if count > 0 and (total / count) < 80:
+                dark_visuals.add(idx)
+        print(f"\n  Dark visuals: {sorted(dark_visuals)} ({len(dark_visuals)} icons)")
+    except ImportError:
+        print("\n  WARNING: Pillow not installed, skipping dark visual detection")
+
     import hashlib
 
     # Save words.py (Python module)
@@ -351,7 +377,8 @@ def compile_lookup():
                 f.write(f"            {int(idx_str)}: {word!r},\n")
             f.write(f"        }},\n")
             f.write(f"    }},\n")
-        f.write("}\n")
+        f.write("}\n\n")
+        f.write(f"DARK_VISUALS = {{{', '.join(str(i) for i in sorted(dark_visuals))}}}\n")
 
     size_kb = os.path.getsize(OUTPUT_FILE) / 1024
     print(f"\nSaved {OUTPUT_FILE}")
