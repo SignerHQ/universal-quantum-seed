@@ -973,7 +973,7 @@ All icons are available as **PNG** (256×256, transparent background) in `visual
 
 ## Word Lookup System
 
-All 42 language word lists plus emoji characters are compiled into a single file (`words.json`) containing a flat hash table for **instant** word resolution and embedded language maps for generation in any language. Everything is in one file — `seed.py`.
+All 42 language word lists plus emoji characters are compiled into a single Python module (`words.py`) containing a flat hash table for **instant** word resolution and embedded language maps for generation in any language.
 
 <br>
 
@@ -1008,7 +1008,7 @@ Smart per-script handling — marks are only stripped where it's safe:
 
 | Operation | Time | Notes |
 |:---|:---|:---|
-| **Import / JSON load** | ~99 ms | One-time at startup (38,730 keys) |
+| **Import** | ~50 ms | One-time at startup (38,730 keys, cached `.pyc`) |
 | **Generate 36 words** | ~9 ms | Full 8-source entropy collection + checksum |
 | **Generate 24 words** | ~5 ms | Full 8-source entropy collection + checksum |
 | **Key derivation** | ~2 sec | PBKDF2 (600k rounds) + Argon2id (64 MiB) |
@@ -1027,7 +1027,7 @@ Smart per-script handling — marks are only stripped where it's safe:
 | Max word length (shortest per index) | **7 chars** across all languages |
 | Languages with 0 single-word indexes | **36** of 42 |
 | Cross-language collisions | **0** |
-| File size (words.json) | **783 KB** |
+| File size (words.py) | **1,186 KB** |
 
 <br>
 

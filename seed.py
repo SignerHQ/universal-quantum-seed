@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Signer — MIT License
 
-__version__ = "2.1"
+__version__ = "2.2"
 
 """Seed generation for the Universal Seed System.
 
@@ -49,7 +49,6 @@ Usage:
 import bisect
 import hashlib
 import hmac
-import json
 import os
 import re
 import secrets
@@ -97,8 +96,8 @@ _BASE_WORDS = (
 )
 _BASE = {i: w for i, w in enumerate(_BASE_WORDS)}
 
-# ── Language support (loaded from words.json at module level below) ──
-_LANGUAGES = {}  # populated after words.json is loaded
+# ── Language support (loaded from words.py at module level below) ──
+_LANGUAGES = {}  # populated after words.py is loaded
 
 
 def _load_language(code):
@@ -139,18 +138,7 @@ _ARGON2_HASHLEN = 64     # output bytes
 _PBKDF2_ITERATIONS = 600_000
 
 # ── Word lookup data ──────────────────────────────────────────────
-_SEED_DIR = os.path.dirname(os.path.abspath(__file__))
-_LOOKUP_FILE = os.path.join(_SEED_DIR, "words.json")
-
-with open(_LOOKUP_FILE, "r", encoding="utf-8") as _f:
-    _WORDS_DATA = json.load(_f)
-
-# Support both old flat format and new structured format
-if "lookup" in _WORDS_DATA and "languages" in _WORDS_DATA:
-    _LOOKUP = _WORDS_DATA["lookup"]
-    _LANGUAGES = _WORDS_DATA["languages"]
-else:
-    _LOOKUP = _WORDS_DATA
+from words import LOOKUP as _LOOKUP, LANGUAGES as _LANGUAGES
 
 _SORTED_KEYS = sorted(_LOOKUP.keys())
 _INDEX_TO_BASE = _BASE  # index -> base English word
