@@ -1,0 +1,169 @@
+{
+  "spec_version": "1.0",
+  "name": "Universal Quantum Seed",
+  "domain_separator": "universal-seed-v1",
+  "compatibility_contract": "v1 seeds MUST always derive the same outputs forever. No parameter may be changed within v1.",
+
+  "seed": {
+    "word_counts": [24, 36],
+    "data_words": {"24": 22, "36": 34},
+    "checksum_words": 2,
+    "entropy_bits": {"24": 176, "36": 272},
+    "post_quantum_bits": {"24": 88, "36": 136},
+    "quantum_safe_minimum": 36,
+    "icon_set_size": 256,
+    "icon_index_range": [0, 255],
+    "bits_per_icon": 8
+  },
+
+  "checksum": {
+    "algorithm": "HMAC-SHA-256",
+    "key": "universal-seed-v1-checksum",
+    "key_bytes": 25,
+    "message": "data indexes as raw bytes",
+    "output": "first 2 bytes of HMAC digest",
+    "error_detection_bits": 16,
+    "false_positive_rate": "1 in 65536"
+  },
+
+  "passphrase": {
+    "encoding": "UTF-8",
+    "normalization": "none",
+    "trimming": false,
+    "case_folding": false,
+    "empty_equals_none": true
+  },
+
+  "kdf_pipeline": {
+    "stages": [
+      {
+        "stage": 0,
+        "name": "Checksum Verification & Stripping",
+        "description": "Verify last 2 indexes match HMAC-SHA-256 checksum, then strip them"
+      },
+      {
+        "stage": 1,
+        "name": "Positional Binding",
+        "description": "Pack each data index with its zero-based position as (pos, idx) byte pairs, little-endian"
+      },
+      {
+        "stage": 2,
+        "name": "Passphrase Mixing",
+        "description": "Append raw UTF-8 passphrase bytes to positional payload"
+      },
+      {
+        "stage": 3,
+        "name": "HKDF-Extract",
+        "algorithm": "HMAC-SHA-512",
+        "key": "universal-seed-v1",
+        "key_bytes": 17,
+        "message": "positional payload + optional passphrase bytes",
+        "output_bytes": 64
+      },
+      {
+        "stage": 4,
+        "name": "Chained KDF Stretching",
+        "substages": [
+          {
+            "name": "PBKDF2-SHA-512",
+            "salt": "universal-seed-v1-stretch-pbkdf2",
+            "salt_bytes": 32,
+            "rounds": 600000,
+            "dklen": 64
+          },
+          {
+            "name": "Argon2id",
+            "salt": "universal-seed-v1-stretch-argon2id",
+            "salt_bytes": 34,
+            "time_cost": 3,
+            "memory_cost_kib": 65536,
+            "memory_cost_mib": 64,
+            "parallelism": 4,
+            "hash_len": 64,
+            "type": "Argon2id"
+          }
+        ]
+      },
+      {
+        "stage": 5,
+        "name": "HKDF-Expand",
+        "algorithm": "HMAC-SHA-512",
+        "info": "universal-seed-v1-master",
+        "info_bytes": 24,
+        "output_bytes": 64
+      }
+    ],
+    "output": {
+      "total_bytes": 64,
+      "encryption_key": "first 32 bytes",
+      "authentication_key": "last 32 bytes"
+    }
+  },
+
+  "profiles": {
+    "algorithm": "HMAC-SHA-512",
+    "key": "master seed (64 bytes)",
+    "message_prefix": "universal-seed-v1-profile",
+    "message_prefix_bytes": 25,
+    "output_bytes": 64,
+    "empty_password": "returns master seed unchanged"
+  },
+
+  "fingerprint": {
+    "length_hex": 8,
+    "length_bytes": 4,
+    "format": "uppercase hex",
+    "without_passphrase": "first 4 bytes of HKDF-Extract PRK",
+    "with_passphrase": "first 4 bytes of full KDF output"
+  },
+
+  "quantum": {
+    "algorithms": {
+      "ml-dsa-65": {
+        "standard": "FIPS 204",
+        "name": "ML-DSA-65 (Dilithium)",
+        "security_level": 3,
+        "seed_size": 32,
+        "public_key_size": 1952,
+        "secret_key_size": 4032,
+        "signature_size": 3309,
+        "assumption": "Module Learning With Errors (MLWE)",
+        "info_prefix": "universal-seed-v1-quantum-ml-dsa-65"
+      },
+      "slh-dsa-shake-128s": {
+        "standard": "FIPS 205",
+        "name": "SLH-DSA-SHAKE-128s (SPHINCS+)",
+        "security_level": 1,
+        "seed_size": 48,
+        "public_key_size": 32,
+        "secret_key_size": 64,
+        "signature_size": 7856,
+        "assumption": "Hash-only (SHAKE-256)",
+        "info_prefix": "universal-seed-v1-quantum-slh-dsa-shake-128s"
+      }
+    },
+    "derivation": {
+      "method": "HKDF-Expand-SHA-512",
+      "info_format": "<info_prefix> + key_index (4 bytes, little-endian uint32)"
+    }
+  },
+
+  "word_resolution": {
+    "strict_mode": {
+      "used_in": "key derivation",
+      "normalization": "NFKC + lowercase",
+      "emoji_variation_stripping": true,
+      "fuzzy_fallbacks": false
+    },
+    "fuzzy_mode": {
+      "used_in": "UI / recovery",
+      "fallbacks": [
+        "diacritic stripping (Latin, Greek, Arabic, Hebrew, Cyrillic)",
+        "Arabic prefix stripping",
+        "Hebrew prefix stripping",
+        "French/Italian contraction stripping",
+        "Scandinavian/Romanian/Icelandic suffix stripping"
+      ]
+    }
+  }
+}

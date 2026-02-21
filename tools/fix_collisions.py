@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Signer — MIT License
 
 """
-Automated collision fixer for the Universal Seed System.
+Automated collision fixer for the Universal Quantum Seed.
 
 For each collision (same word → different indexes), decides which index
 the word most naturally belongs to and removes it from the other(s).

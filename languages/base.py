@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║  Signer Universal Seed System                                ║
+║  Signer Universal Quantum Seed                               ║
 ║  256 unique visuals · 32 words = 256-bit key                 ║
 ║                                                              ║
 ║  * Universal Language Support                                ║

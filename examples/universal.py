@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Signer — MIT License
 
-"""Universal Seed System — generate or recover seeds using 256 visual icons."""
+"""Universal Quantum Seed — generate or recover seeds using 256 visual icons."""
 
 import os
 import sys
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize, QEvent, QPoint, QRect, Signal, QTimer
 from PySide6.QtGui import QPixmap, QIcon, QPainter, QPainterPath, QCursor
 
-from seed import generate_words, get_fingerprint, get_private_key, get_entropy_bits, mouse_entropy, resolve, search, verify_randomness, get_languages, verify_checksum, get_profile
+from seed import generate_words, get_fingerprint, get_seed, get_entropy_bits, mouse_entropy, resolve, search, verify_randomness, get_languages, verify_checksum, get_profile
 from languages.base import signer_universal_seed_base
 
 ICONS_DIR = os.path.join(PROJECT_DIR, "visuals", "png")
@@ -686,7 +686,7 @@ class SeedTestWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Universal Seed System")
+        self.setWindowTitle("Universal Quantum Seed")
         self.setMinimumSize(620, 600)
         self.resize(640, 820)
         self.setStyleSheet(STYLE)
@@ -717,7 +717,7 @@ class SeedTestWindow(QMainWindow):
         hl.setContentsMargins(0, 0, 0, 12)
         hl.setSpacing(4)
 
-        title = QLabel("Universal Seed System")
+        title = QLabel("Universal Quantum Seed")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(
             "color: #1a1a2a; font-size: 22px; font-weight: 700; letter-spacing: 1px;"
@@ -1483,7 +1483,7 @@ class SeedTestWindow(QMainWindow):
         self._key_deriving = True
         version = self._key_version
         def _derive():
-            key_bytes = get_private_key(idxs, pp)
+            key_bytes = get_seed(idxs, pp)
             fp2 = get_fingerprint(idxs, pp)
             self._key_deriving = False
             if self._key_version == version:

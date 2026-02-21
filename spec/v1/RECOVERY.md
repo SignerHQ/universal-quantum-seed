@@ -1,148 +1,268 @@
-# Universal Seed System v1 — Recovery Guide
+# Universal Quantum Seed — Recovery Guide v1
 
-This document explains how to recover a master key from a v1 seed without the Signer app.
+**Spec version:** 1.0
+**Domain separator:** `universal-seed-v1`
+
+> This document describes exactly how to recover keys from a Universal Quantum Seed
+> backup using only standard cryptographic primitives. No proprietary code is needed.
 
 ---
 
 ## What You Need
 
-1. Your **seed words** (16 or 32 words) written on paper
-2. Your **passphrase** (if you set one — empty string if not)
-3. Python 3.8+ with `argon2-cffi` installed
-4. The `seed.py` file (v1.0-v1.3) and `words.json`
+1. Your **24 or 36 words** (or icon indexes 0–255)
+2. Your **passphrase** (if one was set; empty string if none)
+3. A system that can compute:
+   - HMAC-SHA-256 (checksum verification)
+   - HMAC-SHA-512 (HKDF-Extract, HKDF-Expand, profiles)
+   - PBKDF2-SHA-512
+   - Argon2id
+4. The **icon-to-index mapping** (see SPEC.md Section 2, or `words.py`)
 
 ---
 
 ## Step-by-Step Recovery
 
-### Step 1: Resolve words to icon indexes
+### Step 1: Resolve Words to Indexes
 
-Each word maps to an icon index (0-255). Use the lookup table in `words.json`:
+Each word maps to an index 0–255. The canonical list is in SPEC.md Section 2.
+
+```
+eye=0, ear=1, nose=2, mouth=3, tongue=4, bone=5, ...
+```
+
+If you wrote your seed in another language, resolve each word through the
+42-language lookup table in `words.py`. The checksum (Step 2) will catch
+any misresolution.
+
+**Result:** A list of N indexes (N = 24 or 36).
+
+### Step 2: Verify Checksum
+
+The last 2 indexes are a 16-bit HMAC-SHA-256 checksum over the data indexes.
 
 ```python
-from seed import resolve
+data_indexes = indexes[:-2]         # first N-2
+checksum     = indexes[-2:]         # last 2
 
-# Type your words exactly as written
-my_words = ["dog", "sun", "key", "moon", ...]  # all 16 or 32
+key     = b"universal-seed-v1-checksum"
+message = bytes(data_indexes)
+digest  = HMAC-SHA256(key, message)
 
-indexes, errors = resolve(my_words)
-if errors:
-    print(f"Could not resolve: {errors}")
-    # Check spelling, try synonyms, or select icons visually
-else:
-    print(f"Indexes: {indexes}")
+assert checksum == [digest[0], digest[1]]
 ```
 
-If you wrote words in a non-English language, they still resolve:
-```python
-indexes, errors = resolve(["perro", "sol", "llave", "luna", ...])
-```
+If the checksum doesn't match, you have a transcription error. Fix it before
+proceeding — incorrect data will derive a wrong (and useless) key.
 
-### Step 2: Verify visually (optional)
+### Step 3: Strip Checksum
 
-Check that each resolved index matches the icon you remember:
-```
-Index  0 = eye      Index 15 = dog     Index 63 = sun
-Index 64 = moon     Index 136 = key    ...
-```
-
-The full mapping is in `SPEC.md` section 2 or in `seed.py`'s `_BASE_WORDS` tuple.
-
-### Step 3: Derive the master key
+Only the data indexes enter the key derivation pipeline:
 
 ```python
-from seed import get_private_key, get_fingerprint
-
-# Without passphrase
-key = get_private_key(indexes)
-fp = get_fingerprint(indexes)
-print(f"Fingerprint: {fp}")
-print(f"Master key: {key.hex()}")
-
-# With passphrase
-key = get_private_key(indexes, "your passphrase here")
+data_indexes = indexes[:-2]   # 22 data (24-word) or 34 data (36-word)
 ```
 
-### Step 4: Verify the fingerprint
+### Step 4: Positional Binding
 
-Compare the displayed fingerprint (4 hex chars, e.g. `"A3F1"`) with what you recorded. If they match, the recovery is correct.
-
----
-
-## Manual Recovery (No seed.py)
-
-If you only have Python + `argon2-cffi` and no seed.py, you can derive manually:
+Pack each data index with its zero-based position as a (position, index) byte pair,
+little-endian:
 
 ```python
-import hashlib, hmac, struct
-from argon2.low_level import hash_secret_raw, Type
+import struct
 
-DOMAIN = b"universal-seed-v1"
-
-# Your icon indexes (replace with your actual values)
-indexes = [15, 63, 136, ...]  # 16 or 32 integers, each 0-255
-
-# Step 1: Positional binding
 payload = b""
-for pos, idx in enumerate(indexes):
+for pos, idx in enumerate(data_indexes):
     payload += struct.pack("<BB", pos, idx)
+```
 
-# Step 2: Passphrase (skip if none)
-passphrase = ""  # or "your passphrase"
+This produces 44 bytes (24-word seed) or 68 bytes (36-word seed).
+
+### Step 5: Passphrase Mixing
+
+If a passphrase was used, append its raw UTF-8 bytes:
+
+```python
 if passphrase:
     payload += passphrase.encode("utf-8")
-
-# Step 3: HKDF-Extract
-prk = hmac.new(DOMAIN, payload, hashlib.sha512).digest()
-
-# Step 4a: PBKDF2-SHA512
-stage1 = hashlib.pbkdf2_hmac(
-    "sha512", prk,
-    DOMAIN + b"-stretch-pbkdf2",
-    iterations=600_000, dklen=64
-)
-
-# Step 4b: Argon2id
-stretched = hash_secret_raw(
-    secret=stage1,
-    salt=DOMAIN + b"-stretch-argon2id",
-    time_cost=3, memory_cost=65536,
-    parallelism=4, hash_len=64,
-    type=Type.ID
-)
-
-# Step 5: HKDF-Expand
-info = DOMAIN + b"-master"
-prev = b""
-prev = hmac.new(stretched, prev + info + bytes([1]), hashlib.sha512).digest()
-master_key = prev  # 64 bytes
-
-print(f"Master key: {master_key.hex()}")
-
-# Fingerprint (no passphrase only):
-fp_payload = b""
-for pos, idx in enumerate(indexes):
-    fp_payload += struct.pack("<BB", pos, idx)
-fp_key = hmac.new(DOMAIN, fp_payload, hashlib.sha512).digest()
-print(f"Fingerprint: {fp_key[:2].hex().upper()}")
 ```
 
+**No normalization** — the passphrase is used as-is (no NFKC, no trimming, no case folding).
+An empty string `""` produces the same result as no passphrase.
+
+### Step 6: HKDF-Extract (RFC 5869)
+
+Collapse the payload into a 64-byte pseudorandom key using HMAC-SHA-512:
+
+```python
+prk = HMAC-SHA512(key=b"universal-seed-v1", message=payload)
+```
+
+- Key: `b"universal-seed-v1"` (17 bytes)
+- Message: positional payload + optional passphrase bytes
+- Output: 64 bytes (512 bits)
+
+### Step 7: PBKDF2-SHA-512
+
+Stretch the PRK through PBKDF2:
+
+```python
+stage1 = PBKDF2-SHA512(
+    password = prk,
+    salt     = b"universal-seed-v1-stretch-pbkdf2",
+    rounds   = 600000,
+    dklen    = 64
+)
+```
+
+### Step 8: Argon2id
+
+Further harden through Argon2id:
+
+```python
+stage2 = Argon2id(
+    secret      = stage1,
+    salt        = b"universal-seed-v1-stretch-argon2id",
+    time_cost   = 3,
+    memory_cost = 65536,    # 64 MiB
+    parallelism = 4,
+    hash_len    = 64,
+    type        = Argon2id
+)
+```
+
+### Step 9: HKDF-Expand (RFC 5869)
+
+Derive the final 64-byte master key:
+
+```python
+def hkdf_expand(prk, info, length):
+    from math import ceil
+    n = ceil(length / 64)
+    okm = b""
+    prev = b""
+    for i in range(1, n + 1):
+        prev = HMAC-SHA512(key=prk, message=prev + info + bytes([i]))
+        okm += prev
+    return okm[:length]
+
+master_key = hkdf_expand(stage2, b"universal-seed-v1-master", 64)
+```
+
+### Step 10: Done
+
+`master_key` is your 64-byte (512-bit) master seed.
+
+- First 32 bytes: 256-bit encryption key
+- Last 32 bytes: 256-bit authentication key
+- Or use the full 64 bytes as a master seed for further derivation
+
 ---
 
-## Troubleshooting
+## Profile Recovery
 
-| Problem | Solution |
-|:---|:---|
-| Word doesn't resolve | Try the base English word, a synonym, or the icon index directly |
-| Fingerprint doesn't match | Double-check word order, check for swapped words |
-| Wrong key derived | Verify passphrase is exactly right (case-sensitive, no extra spaces) |
-| Missing seed.py | Use the manual recovery code above — only needs Python + argon2-cffi |
+If you used a hidden profile password:
+
+```python
+def get_profile(master_key, profile_password):
+    if not profile_password:
+        return master_key   # empty = default profile
+    payload = b"universal-seed-v1-profile" + profile_password.encode("utf-8")
+    return HMAC-SHA512(key=master_key, message=payload)
+```
+
+Each profile password produces an independent 64-byte key. Without the password,
+the profile's existence cannot be detected.
 
 ---
 
-## Important Notes
+## Post-Quantum Key Recovery
 
-- v1 has **no checksum** — there's no automatic way to detect if a word is wrong
-- Passphrase is **not normalized** — `"Hello"` and `"hello"` produce different keys
-- The fingerprint is only 4 hex chars (16 bits) — it's a quick check, not a guarantee
-- If you have the icon images, you can verify visually that each index matches
+If you derived quantum keypairs, the seeds are derived from the master key via HKDF-Expand:
+
+```python
+_QUANTUM_SEED_SIZES = {
+    "ml-dsa-65": 32,            # xi seed for FIPS 204 KeyGen
+    "slh-dsa-shake-128s": 48,   # SK.seed(16) + SK.prf(16) + PK.seed(16)
+}
+
+def get_quantum_seed(master_key, algorithm, key_index=0):
+    import struct
+    size = _QUANTUM_SEED_SIZES[algorithm]
+    info = b"universal-seed-v1-quantum-" + algorithm.encode("ascii") + struct.pack("<I", key_index)
+    return hkdf_expand(master_key, info, size)
+```
+
+Feed the resulting seed into the appropriate FIPS keygen:
+- **ML-DSA-65 (FIPS 204):** 32-byte seed → `KeyGen(xi)` → (sk: 4,032 B, pk: 1,952 B)
+- **SLH-DSA-SHAKE-128s (FIPS 205):** 48-byte seed → `slh_keygen(seed)` → (sk: 64 B, pk: 32 B)
+
+---
+
+## Fingerprint Verification
+
+To verify you've recovered correctly, compute the fingerprint:
+
+**Without passphrase** (instant — uses HKDF-Extract only):
+```python
+payload = b""
+for pos, idx in enumerate(data_indexes):
+    payload += struct.pack("<BB", pos, idx)
+prk = HMAC-SHA512(key=b"universal-seed-v1", message=payload)
+fingerprint = prk[0:4].hex().upper()   # e.g. "0FBFBBCB"
+```
+
+**With passphrase** (runs full KDF):
+```python
+master_key = ...  # full recovery from Steps 4–9
+fingerprint = master_key[0:4].hex().upper()
+```
+
+Compare this fingerprint against your saved fingerprint. If it matches, recovery
+was successful.
+
+---
+
+## Quick Reference — All Domain Strings
+
+| Stage | String | Usage |
+|:---|:---|:---|
+| Checksum | `b"universal-seed-v1-checksum"` | HMAC-SHA-256 key |
+| HKDF-Extract | `b"universal-seed-v1"` | HMAC-SHA-512 key |
+| PBKDF2 salt | `b"universal-seed-v1-stretch-pbkdf2"` | PBKDF2-SHA-512 salt |
+| Argon2id salt | `b"universal-seed-v1-stretch-argon2id"` | Argon2id salt |
+| HKDF-Expand | `b"universal-seed-v1-master"` | info string |
+| Profile | `b"universal-seed-v1-profile"` | HMAC-SHA-512 message prefix |
+| Quantum ML-DSA | `b"universal-seed-v1-quantum-ml-dsa-65"` + index | HKDF-Expand info |
+| Quantum SLH-DSA | `b"universal-seed-v1-quantum-slh-dsa-shake-128s"` + index | HKDF-Expand info |
+
+---
+
+## Test Vector (Minimal)
+
+All-zeros 24-word seed, no passphrase:
+
+```
+Data indexes:     [0, 0, 0, ..., 0]  (22 zeros)
+Checksum indexes: [169, 111]
+Full indexes:     [0, 0, ..., 0, 169, 111]  (24 total)
+Passphrase:       "" (empty)
+
+PRK (HKDF-Extract only):
+  0fbfbbcbe6763d2395f3502ff2c4fc099caa2fbf0476dd0117696a9afb51e3d1
+  996e4232da6c04f6bb2e346878487d101ebddaf15b6e8ea0c95f72cce4bf675f
+
+Fingerprint: 0FBFBBCB
+```
+
+See `test-vectors.json` for the full set of test vectors including quantum key derivation.
+
+---
+
+## Compatibility
+
+This guide describes v1 of the Universal Quantum Seed. The compatibility contract:
+
+> **v1 seeds MUST always derive the same outputs forever.**
+> No parameter may be changed within v1. If parameters change, a new version
+> with a new domain separator and spec folder MUST be created.

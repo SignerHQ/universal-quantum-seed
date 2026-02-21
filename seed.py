@@ -1,8 +1,8 @@
 # Copyright (c) 2026 Signer — MIT License
 
-__version__ = "2.2"
+__version__ = "1.0"
 
-"""Seed generation for the Universal Seed System.
+"""Seed generation for the Universal Quantum Seed.
 
 Generates cryptographically secure seeds using 256 visual icons (8 bits each).
 - 24 words = 22 random + 2 checksum = 176 bits of entropy
@@ -25,22 +25,23 @@ Key derivation is hardened with multiple layers:
        (64 MiB, 3 iterations) — defense in depth, resists GPU/ASIC/FPGA
     5. HKDF-Expand — derives final key with domain separation
 
-Sources (8 independent classes):
+Entropy sources (defense in depth — OS CSPRNG is sufficient alone):
     1. secrets.token_bytes  — OS CSPRNG (CryptGenRandom / /dev/urandom)
     2. os.urandom           — separate OS CSPRNG call
-    3. time.perf_counter_ns — hardware timer LSB jitter (nanosecond noise)
+    3. time.perf_counter_ns — timer state mixed as additional input
     4. os.getpid            — process-level uniqueness
     5. CPU jitter            — instruction timing variance (cache/TLB/branch)
     6. Thread scheduling     — OS scheduler nondeterminism (context switches)
     7. Hardware RNG          — BCryptGenRandom / platform HWRNG (RDRAND/RDSEED)
 
 Usage:
-    from seed import generate_words, get_private_key, get_profile, get_fingerprint, resolve, search
-    seed = generate_words(36)                       # [(idx, "word"), ...] — 34 random + 2 checksum
-    key  = get_private_key(seed)                    # 64 bytes — pass seed directly
-    key  = get_private_key(seed, "passphrase")      # with passphrase (second factor)
-    prof = get_profile(key, "personal")             # hidden profile — independent 64-byte key
-    fp   = get_fingerprint(seed)                    # "A3F1B2C4" visual fingerprint
+    from seed import generate_words, get_seed, get_profile, get_fingerprint, generate_quantum_keypair, resolve, search
+    words  = generate_words(36)                       # [(idx, "word"), ...] — 34 random + 2 checksum
+    seed   = get_seed(words)                          # 64-byte master seed
+    seed   = get_seed(words, "passphrase")            # with passphrase (second factor)
+    prof   = get_profile(seed, "personal")            # hidden profile — independent 64-byte key
+    fp     = get_fingerprint(words)                   # "A3F1B2C4" visual fingerprint
+    sk, pk = generate_quantum_keypair(seed, "ml-dsa-65")  # post-quantum keypair
     idx   = resolve("dog")                          # 15
     idxs, errs = resolve(["dog", "sun", "key"])     # ([15, 63, 136], [])
     matches = search("do")                          # [("dog", 15), ...]
@@ -126,7 +127,7 @@ def get_languages():
 
 # Domain separator — ensures keys from this system can never collide
 # with keys derived by other systems using the same hash functions.
-_DOMAIN = b"universal-seed-v2"
+_DOMAIN = b"universal-seed-v1"
 
 # Argon2id parameters (OWASP recommended for high-value targets)
 _ARGON2_TIME = 3         # iterations
@@ -134,7 +135,7 @@ _ARGON2_MEMORY = 65536   # 64 MiB
 _ARGON2_PARALLEL = 4     # lanes
 _ARGON2_HASHLEN = 64     # output bytes
 
-# PBKDF2 parameters — first stage of chained KDF (OWASP 2023 minimum for SHA-512)
+# PBKDF2 parameters — first stage of chained KDF
 _PBKDF2_ITERATIONS = 600_000
 
 # ── Word lookup data ──────────────────────────────────────────────
@@ -808,7 +809,7 @@ def verify_checksum(seed):
         return False
     data = indexes[:-2]
     expected = _compute_checksum(data)
-    return indexes[-2:] == expected
+    return hmac.compare_digest(bytes(indexes[-2:]), bytes(expected))
 
 
 def _hkdf_expand(prk, info, length):
@@ -881,47 +882,47 @@ def _to_indexes(seed):
     return indexes
 
 
-def get_private_key(seed, passphrase=""):
-    """Derive 512 bits of hardened key material from a seed + optional passphrase.
+def get_seed(words, passphrase=""):
+    """Derive a 64-byte master seed from words + optional passphrase.
 
     Only the data words (first 22 or 34) enter the KDF — the 2 checksum
-    words are verified and then stripped so the derived key depends solely
+    words are verified and then stripped so the derived seed depends solely
     on the random entropy.
 
     Security layers:
-        1. Checksum verification — rejects corrupted seeds before derivation
+        1. Checksum verification — rejects corrupted words before derivation
         2. Positional binding — each data icon is tagged with its slot index
         3. Passphrase mixing — optional second factor mixed into input
         4. HKDF-Extract — collapses payload into a pseudorandom key (RFC 5869)
         5. Chained KDF — PBKDF2-SHA512 (600k rounds) then Argon2id (64 MiB)
-        6. HKDF-Expand — derives final 64-byte key with domain separation
+        6. HKDF-Expand — derives final 64-byte seed with domain separation
 
     The output is 64 bytes (512 bits) which can be split into:
         - First 32 bytes: 256-bit encryption key
         - Last 32 bytes:  256-bit authentication key
-    Or used whole as a master key for further derivation.
+    Or used whole as a master seed for further derivation.
 
-    The optional passphrase acts as a second factor. Same seed with
-    different passphrases → completely unrelated keys. An empty
-    passphrase is valid and produces a deterministic key.
+    The optional passphrase acts as a second factor. Same words with
+    different passphrases produce completely unrelated seeds. An empty
+    passphrase is valid and produces a deterministic seed.
 
     Args:
-        seed: List of icon indexes (ints 0-255) or words (strings in any language).
+        words: List of icon indexes (ints 0-255) or words (strings in any language).
         passphrase: Optional passphrase string (second factor).
 
     Returns:
-        64 bytes of derived key material.
+        64 bytes of derived seed material.
 
     Raises:
-        ValueError: If the seed length is invalid or checksum fails.
+        ValueError: If the word count is invalid or checksum fails.
     """
-    indexes = _to_indexes(seed)
+    indexes = _to_indexes(words)
 
     # Step 0: Enforce valid length and verify checksum
     if len(indexes) not in (24, 36):
         raise ValueError(f"seed must be 24 or 36 words, got {len(indexes)}")
     data = indexes[:-2]
-    if indexes[-2:] != _compute_checksum(data):
+    if not hmac.compare_digest(bytes(indexes[-2:]), bytes(_compute_checksum(data))):
         raise ValueError("invalid seed checksum")
     indexes = data
 
@@ -940,7 +941,7 @@ def get_private_key(seed, passphrase=""):
     # Step 4: Chained KDF stretching (PBKDF2 → Argon2id)
     stretched = _stretch(prk)
 
-    # Step 5: HKDF-Expand — derive output key with domain separation
+    # Step 5: HKDF-Expand — derive output seed with domain separation
     return _hkdf_expand(stretched, _DOMAIN + b"-master", 64)
 
 
@@ -956,7 +957,7 @@ def get_profile(master_key, profile_password):
     since the master key is already hardened.
 
     Args:
-        master_key: 64-byte master key from get_private_key().
+        master_key: 64-byte master seed from get_seed().
         profile_password: Profile password string. Empty string returns
             master_key unchanged (default profile).
 
@@ -967,6 +968,94 @@ def get_profile(master_key, profile_password):
         return master_key
     payload = _DOMAIN + b"-profile" + profile_password.encode("utf-8")
     return hmac.new(master_key, payload, hashlib.sha512).digest()
+
+
+# ── Quantum Key Derivation ───────────────────────────────────────
+
+_QUANTUM_SEED_SIZES = {
+    "ml-dsa-65": 32,            # xi seed for FIPS 204 KeyGen
+    "slh-dsa-shake-128s": 48,   # SK.seed(16) + SK.prf(16) + PK.seed(16) for FIPS 205 (n=16)
+}
+
+
+def get_quantum_seed(master_key, algorithm="ml-dsa-65", key_index=0, _word_count=None):
+    """Derive post-quantum seed material from a master key via HKDF-Expand.
+
+    Uses algorithm-specific domain separation to ensure complete independence
+    between classical BIP32/SLIP10 keys and each post-quantum algorithm's keys.
+    Deterministic: same inputs always produce the same output.
+
+    The 36-word seed format (272-bit) is required for quantum-safe derivation.
+    A 24-word seed (176-bit) does not provide sufficient entropy for post-quantum
+    security — ML-DSA-65 (Level 3) requires at least 192-bit entropy.
+
+    Args:
+        master_key: 64-byte master seed from get_seed().
+        algorithm: Post-quantum algorithm identifier string.
+            "ml-dsa-65"          -> ML-DSA (Dilithium) FIPS 204, Level 3
+            "slh-dsa-shake-128s" -> SLH-DSA (SPHINCS+) FIPS 205, Level 1
+        key_index: Instance index for multiple quantum keys (default 0).
+            Allows deriving independent keypairs per algorithm.
+        _word_count: Internal — word count of the source seed for entropy validation.
+
+    Returns:
+        bytes — seed material for keygen:
+            ML-DSA-65:          32 bytes (xi seed)
+            SLH-DSA-SHAKE-128s: 48 bytes (SK.seed || SK.prf || PK.seed, n=16 each)
+
+    Raises:
+        ValueError: If master_key is not 64 bytes, algorithm is unknown,
+            or seed entropy is insufficient (24-word seed).
+    """
+    if len(master_key) != 64:
+        raise ValueError(f"master_key must be 64 bytes, got {len(master_key)}")
+    if _word_count is not None and _word_count < 36:
+        raise ValueError(
+            f"Quantum key derivation requires a 36-word seed (272-bit entropy). "
+            f"A {_word_count}-word seed ({(_word_count - 2) * 8}-bit) does not provide "
+            f"sufficient post-quantum security."
+        )
+    size = _QUANTUM_SEED_SIZES.get(algorithm)
+    if size is None:
+        raise ValueError(
+            f"Unknown quantum algorithm: {algorithm!r}. "
+            f"Supported: {', '.join(sorted(_QUANTUM_SEED_SIZES))}"
+        )
+    info = _DOMAIN + b"-quantum-" + algorithm.encode("ascii") + struct.pack("<I", key_index)
+    return _hkdf_expand(master_key, info, size)
+
+
+def generate_quantum_keypair(master_key, algorithm="ml-dsa-65", key_index=0, _word_count=None):
+    """Generate a post-quantum keypair from a master key.
+
+    Derives quantum seed material via get_quantum_seed(), then runs the
+    appropriate keygen algorithm to produce a full keypair.
+
+    The 36-word seed format (272-bit) is required for quantum-safe derivation.
+
+    Args:
+        master_key: 64-byte master seed from get_seed().
+        algorithm: "ml-dsa-65" or "slh-dsa-shake-128s".
+        key_index: Instance index for multiple quantum keys (default 0).
+        _word_count: Internal — word count of the source seed for entropy validation.
+
+    Returns:
+        (secret_key, public_key) tuple:
+            ML-DSA-65:          (4032B sk, 1952B pk)
+            SLH-DSA-SHAKE-128s: (64B sk, 32B pk)
+
+    Raises:
+        ValueError: If master_key is not 64 bytes, algorithm is unknown,
+            or seed entropy is insufficient (24-word seed).
+    """
+    quantum_seed = get_quantum_seed(master_key, algorithm, key_index, _word_count)
+    if algorithm == "ml-dsa-65":
+        from crypto.ml_dsa import ml_keygen
+        return ml_keygen(quantum_seed)
+    elif algorithm == "slh-dsa-shake-128s":
+        from crypto.slh_dsa import slh_keygen
+        return slh_keygen(quantum_seed)
+    raise ValueError(f"Unknown quantum algorithm: {algorithm!r}")
 
 
 def get_fingerprint(seed, passphrase=""):
@@ -992,7 +1081,7 @@ def get_fingerprint(seed, passphrase=""):
         raise ValueError(f"seed must be 24 or 36 words, got {len(indexes)}")
     data = indexes[:-2]
     if passphrase:
-        key = get_private_key(indexes, passphrase)  # full seed — it strips internally
+        key = get_seed(indexes, passphrase)  # full derivation — it strips internally
     else:
         payload = b""
         for pos, idx in enumerate(data):

@@ -1,12 +1,13 @@
 <div align="center">
 
-# Universal Seed System 2.x
+# Universal Quantum Seed
 
-### The world's first visual + multilingual seed phrase system
+### The world's first quantum-safe visual + multilingual seed phrase system
 
-**272-bit entropy** · **42 languages** · **256 icons** · **16-bit checksum** · **One universal standard**
+**272-bit entropy** · **Post-quantum signatures** · **42 languages** · **256 icons** · **16-bit checksum**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Quantum Safe](https://img.shields.io/badge/Quantum-Safe-00d4aa?style=for-the-badge)](#-quantum-security)
 [![Languages](https://img.shields.io/badge/Languages-42-blueviolet?style=for-the-badge)](#-supported-languages)
 [![Icons](https://img.shields.io/badge/Visual_Icons-256-orange?style=for-the-badge)](#-visual-icon-library)
 [![Entropy](https://img.shields.io/badge/Entropy-272_bit-brightgreen?style=for-the-badge)](#-entropy)
@@ -42,14 +43,44 @@
 
 <br>
 
+## Quantum Security
+
+The **36-word seed is quantum-safe by design**. Its 272-bit entropy survives Grover's algorithm with 136-bit post-quantum security — well above the 128-bit floor. The 24-word compact format (176-bit) is designed for classical use; for quantum-safe key derivation, **use 36 words**.
+
+Beyond the quantum-resistant seed, this system includes **two NIST-standardized post-quantum signature algorithms** for generating quantum-safe keypairs directly from your seed:
+
+| Algorithm | Standard | Security | Public Key | Signature | Assumption |
+|:---|:---:|:---:|:---:|:---:|:---|
+| **ML-DSA-65** (Dilithium) | FIPS 204 | Level 3 (192-bit PQ) | 1,952 B | 3,309 B | Lattice (MLWE) |
+| **SLH-DSA-SHAKE-128s** (SPHINCS+) | FIPS 205 | Level 1 (128-bit PQ) | 32 B | 7,856 B | Hash-only (SHAKE-256) |
+
+Both are pure Python with zero external dependencies. Keypairs are derived deterministically from the same master key using HKDF domain separation — one seed backs both classical and post-quantum keys.
+
+```python
+from seed import generate_words, get_seed, generate_quantum_keypair
+
+words = generate_words(36)
+seed  = get_seed(words, "passphrase")
+
+# ML-DSA-65 — fast lattice-based signatures (NIST Level 3)
+sk, pk = generate_quantum_keypair(seed, "ml-dsa-65")
+
+# SLH-DSA-SHAKE-128s — conservative hash-based signatures (NIST Level 1)
+sk, pk = generate_quantum_keypair(seed, "slh-dsa-shake-128s")
+```
+
+Classical ECC keys (secp256k1, Ed25519) will be broken by Shor's algorithm on quantum computers. These quantum keypairs ensure your seed remains secure and usable in a post-quantum world.
+
+<br>
+
 ## Security Model
 
 > Traditional seed phrases (BIP-39) use a single word per position from a fixed list in one language.
 > A seed written on paper is immediately recognizable and usable by anyone who finds it.
 
-The Universal Seed System takes a fundamentally different approach:
+The Universal Quantum Seed takes a fundamentally different approach:
 
-| | Traditional (BIP-39) | Universal Seed System |
+| | Traditional (BIP-39) | Universal Quantum Seed |
 |---|:---:|:---:|
 | Words per position | 1 | **Multiple** (synonyms, slang, abbreviations) |
 | Languages | 10 | **42** |
@@ -75,7 +106,7 @@ The Universal Seed System takes a fundamentally different approach:
 <table>
 <tr>
 <td width="60" align="center"><h3>1</h3></td>
-<td><b>Generate</b> — Cryptographically secure random positions selected from 256 icons using 8 independent entropy sources</td>
+<td><b>Generate</b> — Cryptographically secure random positions selected from 256 icons using defense-in-depth entropy collection</td>
 </tr>
 <tr>
 <td align="center"><h3>2</h3></td>
@@ -103,10 +134,10 @@ The system supports two entropy configurations:
 
 <div align="center">
 
-| Configuration | Words | Random + Checksum | Entropy | Combinations | Use Case |
+| Configuration | Words | Random + Checksum | Entropy | Post-Quantum | Use Case |
 |:---|:---:|:---:|:---:|:---:|:---|
-| **Standard** | 36 | 34 + 2 | 272-bit | ~7.59 × 10⁸¹ | Maximum security — strongest available for cryptocurrency |
-| **Compact** | 24 | 22 + 2 | 176-bit | ~9.59 × 10⁵² | High security — sufficient for most applications |
+| **Standard (Quantum-Safe)** | 36 | 34 + 2 | 272-bit | 136-bit (Grover) | Quantum-safe — required for post-quantum key derivation |
+| **Compact (Classical)** | 24 | 22 + 2 | 176-bit | 88-bit (Grover) | Classical security — sufficient for traditional crypto |
 
 </div>
 
@@ -114,25 +145,23 @@ The system supports two entropy configurations:
 
 **272-bit** exceeds the strongest entropy level used in cryptocurrency. Brute-forcing a 272-bit seed would require more energy than the sun produces in its lifetime. Both configurations use the same 256-position icon set with full positional encoding, and include a 16-bit checksum (2 dedicated words) for error detection.
 
+> **For quantum-safe applications, always use the 36-word format.** The 36-word seed provides 272-bit entropy (136-bit post-quantum), which exceeds NIST Level 3 (ML-DSA-65) and Level 5 requirements. The 24-word compact format (176-bit / 88-bit post-quantum) is suitable for classical cryptographic use only.
+
 ### Strength Comparison
 
-| System | Effective Security | Brute-Force Resistance |
-|:---|:---:|:---|
-| RSA 2048 | ~112-bit | Standard key exchange |
-| AES-128 | 128-bit | High security baseline |
-| Bitcoin (BIP-39, 12 words) | 128-bit | Industry standard for most wallets |
-| Bitcoin (BIP-39, 24 words) | 256-bit | Higher security industry standard |
-| AES-256 | 256-bit | Military grade |
-| **Universal Seed (36 words)** | **272-bit** | **Beyond military grade** |
-| **Universal Seed + passphrase** | **272+ bits** | **Second factor expands the keyspace further** |
+| System | Effective Security | Post-Quantum | Brute-Force Resistance |
+|:---|:---:|:---:|:---|
+| Bitcoin (BIP-39, 24 words) | 256-bit | 128-bit (Grover) | Higher security industry standard |
+| **Universal Quantum Seed (36 words)** | **272-bit** | **136-bit (Grover)** | **Quantum-safe tier** |
+| **Universal Quantum Seed + passphrase** | **272+ bits** | **136+ bits** | **Second factor expands the keyspace further** |
 
-A 36-word Universal Seed is **2¹⁶⁰ times stronger** than RSA 2048. Adding a passphrase pushes it even further beyond 272 bits.
+The 36-word seed retains **136-bit security** even against a quantum computer running Grover's algorithm — well above the 128-bit post-quantum threshold. The 24-word format provides strong classical security (176-bit) but is not recommended for post-quantum key derivation.
 
 <br>
 
-## Seed Generation — 8 Independent Entropy Sources
+## Seed Generation — Defense-in-Depth Entropy
 
-Every generated seed mixes entropy from **8 independent sources** through SHA-512 (a cryptographic randomness extractor). Even if an attacker compromises any combination of sources, the output remains cryptographically strong as long as **any single source** provides real entropy.
+Every generated seed mixes entropy from **multiple sources** through SHA-512 (a cryptographic randomness extractor). Even if some sources are weak, the output remains cryptographically strong as long as **any single source** provides real entropy. The OS CSPRNG alone is sufficient; additional sources provide defense in depth.
 
 <div align="center">
 
@@ -140,10 +169,10 @@ Every generated seed mixes entropy from **8 independent sources** through SHA-51
 |:---:|:---|:---|:---:|
 | 1 | **`secrets.token_bytes`** | OS CSPRNG (CryptGenRandom / `/dev/urandom`) | 512 bits |
 | 2 | **`os.urandom`** | Separate OS CSPRNG call (defense-in-depth) | 512 bits |
-| 3 | **`time.perf_counter_ns`** | Hardware timer LSB jitter (nanosecond noise) | ~32 bits |
-| 4 | **`os.getpid`** | Process-level uniqueness | ~16 bits |
-| 5 | **CPU jitter** | Instruction timing variance (cache/TLB/branch predictor) | ~64 bits |
-| 6 | **Thread scheduling** | OS scheduler nondeterminism (4 batches × 8 threads) | ~64 bits |
+| 3 | **`time.perf_counter_ns`** | Timer state mixed as additional input | low |
+| 4 | **`os.getpid`** | Process-level uniqueness | low |
+| 5 | **CPU jitter** | Instruction timing variance (cache/TLB/branch predictor) | variable |
+| 6 | **Thread scheduling** | OS scheduler nondeterminism (4 batches × 8 threads) | variable |
 | 7 | **Hardware RNG** | BCryptGenRandom (Windows) / `/dev/random` (Linux) + ASLR | 512 bits |
 | 8 | **Mouse entropy** | User-supplied cursor movement (sub-pixel timing + position) | ~512 bits |
 
@@ -242,10 +271,10 @@ payload = [(pos=0, icon=15), (pos=1, icon=63), ...] + passphrase_bytes
 
 ### Layer 3 — HKDF-Extract (RFC 5869)
 
-The combined payload (seed + passphrase) is collapsed into a fixed-size **pseudorandom key (PRK)** using HMAC-SHA512 with a domain separator (`universal-seed-v2`):
+The combined payload (seed + passphrase) is collapsed into a fixed-size **pseudorandom key (PRK)** using HMAC-SHA512 with a domain separator (`universal-seed-v1`):
 
 ```
-PRK = HMAC-SHA512(key="universal-seed-v2", msg=payload)
+PRK = HMAC-SHA512(key="universal-seed-v1", msg=payload)
 ```
 
 **Why:** HKDF-Extract is a proven randomness extractor. It takes the variable-length payload (which may have structure — repeating icons, short seeds, passphrase) and produces a uniformly distributed 512-bit key. The domain separator ensures that keys derived by this system can **never collide** with keys from any other system, even if the input data is identical.
@@ -264,8 +293,8 @@ The PRK is stretched through **two KDFs in series** — PBKDF2-SHA512 first, the
 | **ASIC resistance** | Low | **High** (memory-hard) |
 
 ```
-stage1    = PBKDF2-SHA512(PRK, salt="universal-seed-v2-stretch-pbkdf2", rounds=600000)
-stretched = Argon2id(secret=stage1, salt="universal-seed-v2-stretch-argon2id")
+stage1    = PBKDF2-SHA512(PRK, salt="universal-seed-v1-stretch-pbkdf2", rounds=600000)
+stretched = Argon2id(secret=stage1, salt="universal-seed-v1-stretch-argon2id")
 ```
 
 **Why:** Defense in depth. PBKDF2-SHA512 provides a proven, NIST-approved baseline that resists brute force through sheer iteration count. Argon2id adds memory-hardness on top, making GPU/ASIC parallelization impractical — each attempt requires 64 MiB of RAM. If a vulnerability were ever found in one algorithm, the other still protects the key.
@@ -281,7 +310,7 @@ pip install argon2-cffi   # required
 The stretched key is expanded into the final 64-byte master key using HKDF-Expand with a domain-specific info string:
 
 ```
-master_key = HKDF-Expand(PRK=stretched, info="universal-seed-v2-master", length=64)
+master_key = HKDF-Expand(PRK=stretched, info="universal-seed-v1-master", length=64)
 ```
 
 **Why:** HKDF-Expand provides **domain separation** for the final output. If this system ever needs to derive multiple keys (e.g., encryption key + authentication key), each can use a different info string. The first 32 bytes serve as a 256-bit encryption key, and the last 32 bytes serve as a 256-bit authentication key.
@@ -345,14 +374,15 @@ Seed → Master Key (expensive KDF — runs once)
 ```
 
 ```python
-from seed import get_private_key, get_profile
+from seed import generate_words, get_seed, get_profile
 
-master = get_private_key(seed)
+words = generate_words(36)
+seed  = get_seed(words)
 
-personal = get_profile(master, "personal")    # independent key
-business = get_profile(master, "business")    # completely unrelated
-savings  = get_profile(master, "savings")     # each password = new account
-default  = get_profile(master, "")            # empty = master key itself
+personal = get_profile(seed, "personal")    # independent key
+business = get_profile(seed, "business")    # completely unrelated
+savings  = get_profile(seed, "savings")     # each password = new account
+default  = get_profile(seed, "")            # empty = master key itself
 ```
 
 | Property | Detail |
@@ -364,7 +394,7 @@ default  = get_profile(master, "")            # empty = master key itself
 | Hidden | No way to enumerate how many profiles exist |
 | Plausible deniability | Under duress, reveal only the default profile |
 
-**Why this matters:** With BIP-39, one seed = one wallet. To manage multiple accounts you need multiple seeds. With the Universal Seed System, one seed + profile passwords = unlimited independent wallets, all hidden behind a single backup.
+**Why this matters:** With BIP-39, one seed = one wallet. To manage multiple accounts you need multiple seeds. With the Universal Quantum Seed, one seed + profile passwords = unlimited independent wallets, all hidden behind a single backup.
 
 <br>
 
@@ -383,39 +413,43 @@ No other dependencies required. `seed.py` uses only Python standard library plus
 ### Quick Start
 
 ```python
-from seed import generate_words, get_private_key, get_fingerprint, get_entropy_bits, get_languages, verify_checksum
+from seed import generate_words, get_seed, get_fingerprint, get_entropy_bits, get_languages, verify_checksum
 
-# Generate a 36-word seed (272-bit entropy, 34 random + 2 checksum)
-seed = generate_words(36)
+# Generate 36 words (272-bit entropy, 34 random + 2 checksum)
+words = generate_words(36)
 # → [(15, "dog"), (63, "sun"), (136, "key"), ..., (cs1, "word"), (cs2, "word")]
 
 # Generate in a specific language
-seed = generate_words(36, language="french")
+words = generate_words(36, language="french")
 # → [(15, "chien"), (63, "soleil"), (136, "clé"), ...]
 
 # List available languages
 get_languages()
 # → [("english", "English"), ("arabic", "العربية"), ("french", "Français"), ...]
 
-# Derive a key — pass the seed directly
-key = get_private_key(seed)                # 64 bytes
-fp  = get_fingerprint(seed)                # "A3F1B2C4"
+# Derive the master seed — pass the words directly
+seed = get_seed(words)                  # 64-byte master seed
+fp   = get_fingerprint(words)           # "A3F1B2C4"
 
 # Verify checksum (last 2 words)
-verify_checksum(seed)                      # True
+verify_checksum(words)                  # True
 
-# With a passphrase (second factor — same seed, different passphrase = different key)
-key = get_private_key(seed, "my secret passphrase")
+# With a passphrase (second factor — same words, different passphrase = different seed)
+seed = get_seed(words, "my secret passphrase")
 
 # Hidden profiles — multiple accounts from one seed
 from seed import get_profile
-personal = get_profile(key, "personal")       # independent 64-byte key
-business = get_profile(key, "business")       # completely unrelated key
+personal = get_profile(seed, "personal")       # independent 64-byte key
+business = get_profile(seed, "business")       # completely unrelated key
 
-# Also accepts plain words or raw indexes (must be 24 or 36 with valid checksum)
-words = [w for _, w in seed]          # extract word strings
-key = get_private_key(words)          # resolve words → indexes → key
-key = get_private_key([i for i, _ in seed])  # raw indexes work too
+# Post-quantum keypair from the same seed
+from seed import generate_quantum_keypair
+sk, pk = generate_quantum_keypair(seed)
+
+# Also accepts plain word strings or raw indexes (must be 24 or 36 with valid checksum)
+plain = [w for _, w in words]          # extract word strings
+seed  = get_seed(plain)                # resolve words → indexes → seed
+seed  = get_seed([i for i, _ in words])  # raw indexes work too
 
 # Estimate total entropy
 bits = get_entropy_bits(36, "my secret passphrase")
@@ -464,8 +498,8 @@ pool.bits_collected   # → 4 (2 bits per unique sample)
 pool.sample_count     # → 2
 
 # Extract and use
-extra = pool.digest()                        # 64 bytes of entropy
-seed = generate_words(36, extra_entropy=extra)  # mixed into generation
+extra = pool.digest()                         # 64 bytes of entropy
+words = generate_words(36, extra_entropy=extra)  # mixed into generation
 ```
 
 ### Randomness Verification
@@ -512,9 +546,9 @@ print(kdf_info())
 | Function | Signature | Returns |
 |:---|:---|:---|
 | `generate_words` | `generate_words(word_count=36, extra_entropy=None, language=None)` | `list[(int, str)]` — index/word pairs (last 2 are checksum) |
-| `verify_checksum` | `verify_checksum(seed)` | `bool` — True if last 2 words match expected checksum |
-| `get_private_key` | `get_private_key(seed, passphrase="")` | `bytes` — 64-byte master key (checksum verified & stripped) |
-| `get_profile` | `get_profile(master_key, profile_password)` | `bytes` — 64-byte profile key (instant HMAC, no KDF) |
+| `verify_checksum` | `verify_checksum(words)` | `bool` — True if last 2 words match expected checksum |
+| `get_seed` | `get_seed(words, passphrase="")` | `bytes` — 64-byte master seed (checksum verified & stripped) |
+| `get_profile` | `get_profile(seed, profile_password)` | `bytes` — 64-byte profile key (instant HMAC, no KDF) |
 | `get_fingerprint` | `get_fingerprint(seed, passphrase="")` | `str` — 8-char hex (checksum stripped) |
 | `get_entropy_bits` | `get_entropy_bits(word_count, passphrase="")` | `float` — estimated total entropy |
 | `resolve` | `resolve(word_or_list, strict=False)` | `str` → `int \| None`; `list` → `(indexes, errors)` |
@@ -522,6 +556,8 @@ print(kdf_info())
 | `verify_randomness` | `verify_randomness(sample_bytes=None, sample_size=2048, num_samples=5)` | `dict` — `{"pass": bool, "tests": [...], "summary": str}` |
 | `mouse_entropy` | class | Entropy collection pool |
 | `get_languages` | `get_languages()` | `list[(str, str)]` — (code, label) pairs |
+| `get_quantum_seed` | `get_quantum_seed(master_key, algorithm="ml-dsa-65", key_index=0)` | `bytes` — raw quantum seed material (32 or 48 bytes) |
+| `generate_quantum_keypair` | `generate_quantum_keypair(master_key, algorithm="ml-dsa-65", key_index=0)` | `tuple[bytes, bytes]` — (secret_key, public_key) |
 | `kdf_info` | `kdf_info()` | `str` — chained KDF pipeline description |
 
 <br>
@@ -1009,8 +1045,8 @@ Smart per-script handling — marks are only stripped where it's safe:
 | Operation | Time | Notes |
 |:---|:---|:---|
 | **Import** | ~50 ms | One-time at startup (38,730 keys, cached `.pyc`) |
-| **Generate 36 words** | ~9 ms | Full 8-source entropy collection + checksum |
-| **Generate 24 words** | ~5 ms | Full 8-source entropy collection + checksum |
+| **Generate 36 words** | ~9 ms | Full entropy collection + checksum |
+| **Generate 24 words** | ~5 ms | Full entropy collection + checksum |
 | **Key derivation** | ~2 sec | PBKDF2 (600k rounds) + Argon2id (64 MiB) |
 | **Word resolve** | ~0.01 ms | O(1) hash table lookup |
 | **Prefix search** | ~0.04 ms | Binary search + dedup |
@@ -1092,8 +1128,8 @@ MIT License. See [LICENSE](LICENSE).
 
 <div align="center">
 
-**Built for everyone, everywhere.**
+**Quantum-safe. Built for everyone, everywhere.**
 
-<sub>42 languages · 256 icons · 8 entropy sources · PBKDF2 + Argon2id hardened · 272-bit security · 16-bit checksum</sub>
+<sub>Post-quantum signatures · 42 languages · 256 icons · PBKDF2 + Argon2id hardened · 272-bit quantum-safe (36 words) · 16-bit checksum</sub>
 
 </div>

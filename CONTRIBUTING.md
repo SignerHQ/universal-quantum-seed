@@ -1,4 +1,4 @@
-# Contributing to the Universal Seed System
+# Contributing to the Universal Quantum Seed
 
 Thank you for your interest in contributing! The most valuable contributions are improving word coverage across languages — adding more synonyms, shorter alternatives, regional variants, and colloquial terms so that seed recovery is as intuitive as possible for users worldwide.
 
