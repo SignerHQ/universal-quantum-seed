@@ -975,6 +975,7 @@ def get_profile(master_key, profile_password):
 _QUANTUM_SEED_SIZES = {
     "ml-dsa-65": 32,            # xi seed for FIPS 204 KeyGen
     "slh-dsa-shake-128s": 48,   # SK.seed(16) + SK.prf(16) + PK.seed(16) for FIPS 205 (n=16)
+    "ml-kem-768": 64,           # d (32B) || z (32B) for FIPS 203 KeyGen
 }
 
 
@@ -1035,7 +1036,7 @@ def generate_quantum_keypair(master_key, algorithm="ml-dsa-65", key_index=0, _wo
 
     Args:
         master_key: 64-byte master seed from get_seed().
-        algorithm: "ml-dsa-65" or "slh-dsa-shake-128s".
+        algorithm: "ml-dsa-65", "slh-dsa-shake-128s", or "ml-kem-768".
         key_index: Instance index for multiple quantum keys (default 0).
         _word_count: Internal — word count of the source seed for entropy validation.
 
@@ -1043,6 +1044,7 @@ def generate_quantum_keypair(master_key, algorithm="ml-dsa-65", key_index=0, _wo
         (secret_key, public_key) tuple:
             ML-DSA-65:          (4032B sk, 1952B pk)
             SLH-DSA-SHAKE-128s: (64B sk, 32B pk)
+            ML-KEM-768:         (2400B dk, 1184B ek)
 
     Raises:
         ValueError: If master_key is not 64 bytes, algorithm is unknown,
@@ -1055,6 +1057,10 @@ def generate_quantum_keypair(master_key, algorithm="ml-dsa-65", key_index=0, _wo
     elif algorithm == "slh-dsa-shake-128s":
         from crypto.slh_dsa import slh_keygen
         return slh_keygen(quantum_seed)
+    elif algorithm == "ml-kem-768":
+        from crypto.ml_kem import ml_kem_keygen
+        ek, dk = ml_kem_keygen(quantum_seed)
+        return dk, ek  # (secret=dk, public=ek) to match (sk, pk) convention
     raise ValueError(f"Unknown quantum algorithm: {algorithm!r}")
 
 
