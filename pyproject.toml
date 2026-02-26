@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "universal-quantum-seed"
+version = "1.0.0"
+description = "The world's first quantum-safe visual + multilingual seed phrase system. Pure Python, zero dependencies."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Signer.io"}]
+requires-python = ">=3.9"
+keywords = [
+    "quantum", "seed", "mnemonic", "post-quantum", "cryptography",
+    "ml-dsa", "ml-kem", "slh-dsa", "fips-203", "fips-204", "fips-205",
+    "sha3", "keccak", "multilingual", "visual", "wallet", "entropy"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+]
+
+[project.urls]
+Homepage = "https://github.com/SignerHQ/universal-quantum-seed"
+Repository = "https://github.com/SignerHQ/universal-quantum-seed"
+
+[tool.setuptools]
+packages = ["uqs", "uqs.crypto"]
+
+[tool.setuptools.package-dir]
+"uqs" = "."
+"uqs.crypto" = "crypto"
+
+[tool.setuptools.package-data]
+"uqs" = [
+    "visuals/png/*.png",
+    "visuals/svg/*.svg",
+    "visuals/LICENSE",
+    "languages/*.py",
+]
