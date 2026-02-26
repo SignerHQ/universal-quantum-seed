@@ -41,8 +41,9 @@ packages = ["uqs", "uqs.crypto"]
 
 [tool.setuptools.package-data]
 "uqs" = [
+    "LICENSE",
+    "words.py.sha256",
+    "visuals/LICENSE",
     "visuals/png/*.png",
     "visuals/svg/*.svg",
-    "visuals/LICENSE",
-    "languages/*.py",
 ]
