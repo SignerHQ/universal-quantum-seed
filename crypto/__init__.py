@@ -42,6 +42,12 @@ from .hybrid_kem import hybrid_kem_keygen, hybrid_kem_encaps, hybrid_kem_decaps
 # KDF
 from .argon2 import hash_secret_raw as argon2_hash, argon2id, blake2b
 
+# Symmetric encryption
+from .aes_gcm import (
+    aes_gcm_encrypt, aes_gcm_decrypt,
+    AES_GCM_KEY_SIZE, AES_GCM_NONCE_SIZE, AES_GCM_TAG_SIZE,
+)
+
 __all__ = [
     # Classical
     "ed25519_keygen", "ed25519_sign", "ed25519_verify",
@@ -57,4 +63,7 @@ __all__ = [
     "hybrid_kem_keygen", "hybrid_kem_encaps", "hybrid_kem_decaps",
     # KDF
     "argon2_hash", "argon2id", "blake2b",
+    # Symmetric encryption
+    "aes_gcm_encrypt", "aes_gcm_decrypt",
+    "AES_GCM_KEY_SIZE", "AES_GCM_NONCE_SIZE", "AES_GCM_TAG_SIZE",
 ]
