@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """ML-KEM-768 (Kyber) — FIPS 203 post-quantum key encapsulation mechanism.
 

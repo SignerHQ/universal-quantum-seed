@@ -107,4 +107,4 @@ Be respectful and constructive. This project serves users worldwide, and every l
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
+By contributing, you agree that your contributions will be licensed under the [PolyForm Shield License 1.0.0](LICENSE).

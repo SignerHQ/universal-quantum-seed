@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """Pure-Python Ed25519 digital signatures (RFC 8032).
 

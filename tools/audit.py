@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """Audit word lengths across all languages. Find indexes where shortest word is too long."""
 import sys, io, importlib, os

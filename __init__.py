@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """Universal Quantum Seed — 256 visual icons, 42 languages, 272-bit entropy.
 
@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 
 _TRUSTED_WORDLIST_SHA256 = (
-    "f24ab526b5484934d766738421eb4ea6a8199c4a69d6c450aca8a4ab48f9bc46"
+    "870a26ae25f2df982cba0392188698dd3915865c71c111bb41d14d13f7bd87bb"
 )
 
 

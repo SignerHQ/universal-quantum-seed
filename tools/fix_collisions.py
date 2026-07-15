@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """
 Automated collision fixer for the Universal Quantum Seed.

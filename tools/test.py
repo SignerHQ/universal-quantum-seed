@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """Comprehensive test suite for all crypto modules.
 
@@ -2767,6 +2767,7 @@ if __name__ == "__main__":
     print("=" * 68)
 
     t0 = time.perf_counter()
-    unittest.main(verbosity=2, exit=False)
+    program = unittest.main(verbosity=2, exit=False)
     elapsed = time.perf_counter() - t0
     print(f"\nTotal time: {elapsed:.1f}s")
+    raise SystemExit(0 if program.result.wasSuccessful() else 1)

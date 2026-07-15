@@ -2,11 +2,11 @@
 
 # Universal Quantum Seed
 
-### The world's first quantum-safe visual + multilingual seed phrase system
+### A visual and multilingual seed phrase system with hybrid cryptography
 
 **272-bit entropy** · **Hybrid quantum-safe crypto** · **42 languages** · **256 icons** · **16-bit checksum**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/License-PolyForm%20Shield%201.0.0-blue.svg?style=for-the-badge)](LICENSE)
 [![Quantum Safe](https://img.shields.io/badge/Quantum-Safe-00d4aa?style=for-the-badge)](#-quantum-security)
 [![Hybrid Crypto](https://img.shields.io/badge/Hybrid-Classical_+_PQ-ff6b6b?style=for-the-badge)](#tier-3--hybrid-classical--post-quantum)
 [![Languages](https://img.shields.io/badge/Languages-42-blueviolet?style=for-the-badge)](#-supported-languages)
@@ -28,21 +28,21 @@
 
 ---
 
-<br>
-
-*Screenshots from Lock's treasury app*
-
-<table>
-<tr>
-<td><img src="examples/screenshots/treasury1.png" width="270"></td>
-<td><img src="examples/screenshots/treasury2.png" width="270"></td>
-<td><img src="examples/screenshots/treasury3.png" width="270"></td>
-</tr>
-</table>
-
 </div>
 
 <br>
+
+## Project Status
+
+This repository is a **v1 release candidate**. Its compatibility vectors and
+test suites are maintained as release gates, but the implementation has not
+yet completed an independent cryptographic security audit. Treat it as
+pre-release software: evaluate it for your threat model and do not rely on it
+as the sole protection for production funds or sensitive accounts.
+
+Checked-in wordlist outputs are generated from the language sources by
+`tools/compile.py`. Continuous integration regenerates them and fails if the
+result differs, so source and generated data remain reviewable together.
 
 ## Quantum Security
 
@@ -1176,13 +1176,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute, the fil
 
 ## Third-Party Licenses
 
-Visual icons are from [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji) (flat style), used under the MIT License. See [visuals/LICENSE](visuals/LICENSE) for details.
+Visual icons are from [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji)
+(flat style), used under the MIT License. See [visuals/NOTICE.md](visuals/NOTICE.md)
+for the pinned upstream revision and [visuals/LICENSE](visuals/LICENSE) for the
+preserved license text.
 
 <br>
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+PolyForm Shield License 1.0.0. See [LICENSE](LICENSE).
 
 <br>
 

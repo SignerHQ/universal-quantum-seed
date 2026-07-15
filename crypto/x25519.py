@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """Pure-Python X25519 Diffie-Hellman key exchange (RFC 7748).
 

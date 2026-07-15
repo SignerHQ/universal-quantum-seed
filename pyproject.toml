@@ -1,13 +1,16 @@
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
+
 [build-system]
-requires = ["setuptools>=68.0"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "universal-quantum-seed"
 version = "1.0.0"
-description = "The world's first quantum-safe visual + multilingual seed phrase system. Pure Python, zero dependencies."
+description = "Visual and multilingual seed phrases with hybrid classical and post-quantum cryptographic primitives."
 readme = "README.md"
-license = {text = "MIT"}
+license = "LicenseRef-PolyForm-Shield-1.0.0"
+license-files = ["LICENSE"]
 authors = [{name = "Lock.com"}]
 requires-python = ">=3.9"
 keywords = [
@@ -16,9 +19,8 @@ keywords = [
     "sha3", "keccak", "multilingual", "visual", "wallet", "entropy"
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -34,6 +36,7 @@ Repository = "https://github.com/madebylock/universal-quantum-seed"
 
 [tool.setuptools]
 packages = ["uqs", "uqs.crypto"]
+include-package-data = false
 
 [tool.setuptools.package-dir]
 "uqs" = "."

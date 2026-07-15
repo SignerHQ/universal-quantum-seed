@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Lock — MIT License
+# Copyright (c) 2026 Lock.com — PolyForm Shield License 1.0.0
 
 """ML-DSA-65 (Dilithium) — FIPS 204 post-quantum digital signature.
 
