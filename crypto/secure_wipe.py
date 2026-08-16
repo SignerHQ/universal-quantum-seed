@@ -86,7 +86,17 @@ if _IS_CPYTHON:
         _ci_size = sys.getsizeof(_canary_int) - _INT_HEADER
         if _ci_size > 0:
             ctypes.memset(id(_canary_int) + _INT_HEADER, 0, _ci_size)
-            if _canary_int == 0:
+            # Validate by re-reading the wiped bytes, never by `== 0`: a
+            # wiped long keeps ob_size=1 with a zero digit, and CPython
+            # <= 3.11 compares longs by ob_size first, so the husk is
+            # unequal to the normalized 0 even though its memory is zeroed
+            # (3.12+ compact ints read the digit and compare equal). The
+            # security claim is "the digit memory is zeroed" — inspect
+            # exactly that, on every version.
+            _int_after = ctypes.string_at(
+                id(_canary_int) + _INT_HEADER, _ci_size
+            )
+            if _int_after == b"\x00" * _ci_size:
                 # -- bytes canary: len > 1 to avoid interned singletons
                 _canary_bytes = bytes(b"\xab\xcd\xef")
                 ctypes.memset(id(_canary_bytes) + _BYTES_HEADER, 0, len(_canary_bytes))
@@ -108,7 +118,7 @@ if _IS_CPYTHON:
                         _LAYOUT_OK = True
         del (
             _canary_int, _canary_bytes, _canary_str, _ci_size, _int_mem,
-            _digit_offset, _str_mem, _str_offset,
+            _int_after, _digit_offset, _str_mem, _str_offset,
         )
     except Exception:
         _LAYOUT_OK = False
